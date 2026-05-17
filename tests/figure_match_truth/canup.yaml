@@ -1,0 +1,18 @@
+paper: canup.pdf
+out_dir: examples/out_canup
+total_pdf_pages: 6
+captions:
+  "1": "Simulation of the Moon's accretion"
+  "2": "Melt-vapour equilibria in a BSE-composition protolunar disk"
+  "3": "Clump formation temperature and volatile content"
+expected_matches:
+  _page_0_Picture_2.jpeg: DROP
+  _page_1_Figure_2.jpeg: "1"
+  _page_2_Figure_2.jpeg: "2"
+  _page_2_Figure_4.jpeg: "3"
+notes: |
+  The paper has 3 figures total: Fig 1 on PDF p2, and Figs 2 and 3 both
+  on PDF p3 (likely side-by-side or stacked). Marker correctly extracts
+  both as separate images on page 3 but the baseline classifier maps
+  both to Fig 2 because the VLM cannot tell them apart from caption
+  text alone.

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper2md"
+version = "0.4.0"
+description = "PDF → markdown converter for science journal articles (marker + mineru backends)"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Sarah T. Stewart", email = "sstewa56@asu.edu"}]
+requires-python = ">=3.10"
+
+# Dependencies are managed by the conda environment files
+# (environment-mac.yml, environment-gpu.yml). The conda env hard-pins
+# marker-pdf, surya-ocr, torch, transformers, pymupdf, docling, pillow
+# to versions tested across Apple Silicon + DGX Spark + ASU Sol clusters.
+#
+# This package is INTENDED FOR LOCAL EDITABLE INSTALL ONLY:
+#     conda activate paper2md
+#     pip install -e . --no-deps
+#
+# It is NOT meant for PyPI publishing. The --no-deps flag is critical:
+# pip would otherwise try to resolve marker-pdf et al. and conflict with
+# the conda-installed versions.
+#
+# Downstream consumers (zotero-mcp-2, zotero-mcp-dx) likewise install
+# this package with --no-deps inside their own conda envs.
+dependencies = []
+
+[project.scripts]
+paper2md = "paper2md:main"
+wrap_mineru = "wrap_mineru:main"
+triage_pdfs = "triage_pdfs:main"
+vlm-table = "vlm_table:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = [
+    "paper2md",
+    "metadata_frontend",
+    "data_repos",
+    "wrap_mineru",
+    "layout_mineru",
+    "split_pdf",
+    "repack_h5",
+    "unpack_h5",
+    "triage_pdfs",
+    "vlm_table",
+]

@@ -1,0 +1,25 @@
+paper: millot.pdf
+out_dir: examples/enstatite/out_millot
+total_pdf_pages: 8
+captions:
+  "1": "Experimental configuration. (a) Cylinder of polycrystalline MgSiO3 bridgmanite synthesized in run H4538. (b) Sample plate. (c) Target sketch. (d) Measurement concept."
+  "2": "VISAR data. Raw (Top) and corrected (Middle) records for VISAR channel A for shot 25219."
+  "3": "(Top) Shock velocity US versus particle velocity up. (Bottom) Pressure P versus density for various polymorphs of MgSiO3."
+  "4": "Shock Temperature T versus shock pressure P for various polymorphs of MgSiO3."
+  "5": "Shock front reflectivity R as a function of shock velocity US for various polymorphs of MgSiO3."
+expected_matches:
+  _page_0_Picture_0.jpeg: DROP
+  _page_0_Picture_1.jpeg: DROP
+  _page_1_Figure_3.jpeg: "1"
+  _page_2_Figure_3.jpeg: "2"
+  _page_3_Figure_3.jpeg: "3"
+  _page_4_Figure_3.jpeg: "4"
+  _page_5_Figure_3.jpeg: "5"
+notes: |
+  Figure 1 is multi-panel (a-d) on PDF page 1; marker extracts only one image per page, so
+  _page_1_Figure_3.jpeg should be tagged Fig 1 (the panel marker chose). Page-0 pictures
+  are journal-banner / cover-art artefacts and should be dropped.
+
+  Baseline failure (current code): _page_2_Figure_3.jpeg → matched as Fig 5 (should be 2);
+  _page_1_Figure_3.jpeg → dropped (should be Fig 1). Two images both claim Fig 5; no image
+  for Fig 2 or Fig 1.

@@ -1,0 +1,9 @@
+paper: mnras-template.pdf
+out_dir: examples/out_mnras
+total_pdf_pages: 2
+captions: {}  # TODO: list captions from mnras-template.pdf
+expected_matches:
+  _page_0_Figure_25.jpeg: "1"  # block_idx is non-deterministic in marker; was Figure_26 in earlier runs
+notes: |
+  Easy-case sanity check: synthetic MNRAS template, 1 figure, baseline already correct.
+  Any solution that breaks this is unacceptable.

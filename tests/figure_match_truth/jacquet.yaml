@@ -1,0 +1,54 @@
+paper: jacquet.pdf
+out_dir: examples/out_jacquet
+total_pdf_pages: 20
+captions:
+  "1":   "Abundance patterns for elements arranged in order of increasing volatility"
+  "2":   "Mean Na/Al versus Mg/Si ratios for different chondrule types"
+  "3":   "Mean K/Al versus Mg/Si ratios for different chondrule types"
+  "4":   "Minor element concentration ratio between rim and core olivine"
+  "5":   "Mesostasis/glass Na/Al vs SiO2 contents for chondrules"
+  "6":   "Rolling averages of Na/Al (CI-normalized) for mesostasis data"
+  "7":   "Rolling averages of K/Al (CI-normalized) for mesostasis data"
+  "8":   "Mesostasis Na2O versus optical basicity"
+  "9":   "MDF as a function of condensed fraction for two cooling laws"
+  "10":  "Mesostasis Na2O versus optical basicity for alkali-zoned chondrules"
+  "11":  "Sketch of alkali recondensation scenario"
+  "12":  "Various constraints on chondrule-forming environment"
+  "B.13": "Mesostasis K/Na ratio vs silica"
+  "D.14": "Derivative of MDF with respect to x_50"
+expected_matches:
+  _page_0_Picture_1.jpeg: DROP    # banner / journal logo
+  _page_0_Picture_5.jpeg: DROP    # banner / journal logo
+  _page_2_Figure_1.jpeg: "1"      # PDF p3 — Fig 1
+  _page_2_Figure_3.jpeg: "2"      # PDF p3 — Fig 2
+  _page_2_Figure_5.jpeg: "3"      # PDF p3 — Fig 3
+  _page_3_Figure_1.jpeg: "4"      # PDF p4 — Fig 4
+  _page_4_Figure_1.jpeg: "5"      # PDF p5 — Fig 5  (was: Fig 8 dup)
+  _page_5_Figure_1.jpeg: "6"      # PDF p6 — Fig 6
+  _page_5_Figure_3.jpeg: "7"      # PDF p6 — Fig 7  (was: Fig 8 dup)
+  _page_5_Figure_5.jpeg: "8"      # PDF p6 — Fig 8
+  _page_7_Figure_1.jpeg: "9"      # PDF p8 — Fig 9  (was: DROPPED)
+  _page_8_Figure_3.jpeg: "10"     # PDF p9 — Fig 10  (was: Fig 8 dup)
+  _page_9_Figure_1.jpeg: "11"     # PDF p10 — Fig 11
+  _page_10_Figure_1.jpeg: "12"    # PDF p11 — Fig 12
+  _page_12_Figure_0.jpeg: DROP    # extraction fragment
+  _page_12_Figure_1.jpeg: "B.13"  # PDF p13 — appendix Fig B.13
+  _page_15_Figure_1.jpeg: "D.14"  # PDF p16 — appendix Fig D.14  (was: DROPPED)
+notes: |
+  17 images: 3 DROPs + 14 real figures. The hardest test case in the
+  corpus. 12 numbered figures (1-12) plus 2 appendix figures using the
+  letter-prefixed numbering convention some Elsevier journals use
+  (Fig. B.13 in Appendix B, Fig. D.14 in Appendix D).
+
+  Baseline failures (pre-fix):
+  - 5 images all mapped to Fig 8 (the duplicate group)
+  - Fig 9 dropped (caption regex didn't pick up the very long math title)
+  - Fig 5 not in captions list at all (plain "Fig. 5. Title" format with
+    no bold and no pipe — needed FIG_CAPTION_RE_PLAIN)
+  - Fig 10 same issue as Fig 5
+  - Figs B.13, D.14 in captions list dependent on FIG_ID_PAT supporting
+    the "Letter.Number" form
+
+  After regex extension: all 14 captions extracted. Remaining failure
+  modes are then on the classifier path, which dup-detect should
+  resolve via reclassify-excluding.

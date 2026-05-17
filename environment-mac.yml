@@ -1,0 +1,100 @@
+# Conda environment for paper2md on Apple Silicon (Mac MPS / CPU).
+#
+#   conda env create -f environment-mac.yml
+#   conda activate paper2md
+#   python src/paper2md.py paper.pdf -o out/      # auto-resolves to CPU
+#
+# Optional MinerU for --layout-source mineru / hybrid (not CUDA-required;
+# MinerU has a CPU mode -- slower but works on Apple Silicon):
+#   pip install "mineru[core]==3.1.7"             # PIN required (see below)
+#
+# Refresh:
+#   conda env update -f environment-mac.yml --prune
+#   pip install "mineru[core]==3.1.7"             # re-run if MinerU installed
+#
+# !!! PINNED VERSIONS — DO NOT BUMP CASUALLY !!!
+#
+#   marker-pdf 1.10.2 + surya-ocr 0.17.1 are pinned for body OCR
+#   reproducibility (matches environment-gpu.yml).
+#
+#   mineru 3.1.7 (if installed) is pinned because paper2md's hybrid
+#   splice and several layout-rescue hooks parse MinerU's middle.json
+#   schema. Schema drift between MinerU minor versions has historically
+#   broken caption detection, table HTML extraction, and figure-asset
+#   paths. Symptoms of mismatch: silently dropped figures/tables in
+#   output, splice counters going to zero corpus-wide, or noisy parsing
+#   errors.
+#
+#   If you must upgrade: run the "When MinerU version changes"
+#   checklist in docs/dev/HYBRID_IMPLEMENTATION.md, audit every fudge
+#   counter against a baseline corpus, and update the pin here AND in
+#   environment-gpu.yml AND in docs/USAGE.md §2.
+#
+# As of v0.2.1, paper2md auto-resolves `--backend auto` to `cpu` on
+# Apple Silicon. surya's MPS path produces silently corrupted body text
+# (OCR character drops, scrambled reading order, lost equations) -- not
+# just sporadic crashes. The drift is rooted in PyTorch MPS float-
+# kernel precision; surya's autoregressive OCR decoder samples enough
+# tokens that the cumulative error breaks output. CPU is reliable;
+# wall time is ~3x a CUDA reference run on a typical paper. See
+# docs/USAGE.md §6.0 for the empirical pass/fail matrix and the
+# upstream tracking links.
+#
+# `--backend mps` remains as an explicit opt-in; paper2md logs a
+# WARNING explaining the trade-off. For small papers and side-by-side
+# comparison with a known-good reference, MPS opt-in is fine.
+#
+# This env pins the SAME exact ML stack versions as
+# environment-gpu.yml so paper2md outputs are comparable across Mac
+# CPU and Spark CUDA runs. Bump pins in BOTH files in the same commit
+# to keep the corpus pipeline reproducible.
+#
+# LM Studio is NOT installed here -- it's a desktop app that hosts the
+# local VLM. Install it separately from https://lmstudio.ai and start
+# its server on http://localhost:1234 before running paper2md.
+# Recommended local VLM: Qwen3-VL-32B-Instruct-MLX (8-bit) or larger.
+# Avoid mixture-of-experts variants (e.g. Qwen3-VL-30B-A3B) on careful
+# prompts like article-trim and citation extraction -- the smaller
+# active-parameter footprint produces noticeably worse decisions on
+# our test corpus.
+
+name: paper2md
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pillow==10.4.0      # match environment-gpu.yml
+  - pyyaml
+  - h5py>=3.9
+  - pip
+  - pip:
+      # pymupdf is in the pip section (not conda) because conda-forge tops
+      # out at 1.27.2.2 and we want 1.27.2.3 on both Mac and Spark for
+      # output-frontmatter parity. PyPI has the newer wheel for
+      # macosx_arm64.
+      - pymupdf==1.27.2.3
+      # marker-pdf / surya-ocr / transformers / docling pinned exactly --
+      # MUST match environment-gpu.yml so paper2md outputs are
+      # comparable across machines.
+      - marker-pdf==1.10.2
+      - surya-ocr==0.17.1
+      - transformers==4.57.6
+      # torch is the one ML package that necessarily differs from the
+      # Spark env: Spark uses the +cu130 build (forced by pytorch.org's
+      # index URL); we pin to the SAME numeric 2.10.0 here so surya's
+      # neural-net code paths are identical. The plain PyPI wheel below
+      # is a CPU + MPS Apple Silicon build of torch 2.10.0.
+      - torch==2.10.0
+      - openai>=1.0
+      - anthropic>=0.30
+      - timm>=0.9
+      # Metadata / copyright front-end (Crossref, OpenAlex, Unpaywall, etc.)
+      - requests>=2.31
+      - python-dotenv>=1.0
+      # docling is now optional. The default --table-finder is 'pymupdf'
+      # (cheap, ruled tables only) since the v0.3.x mineru-default flip;
+      # MinerU's own table extractor handles borderless cases under the
+      # default --layout-source=mineru. Install docling explicitly if you
+      # want --table-finder docling under --layout-source=marker for
+      # borderless / scanned-table fidelity:
+      #     pip install docling==2.92.0

@@ -1,0 +1,35 @@
+paper: young-full.pdf
+out_dir: examples/out_young
+total_pdf_pages: 16
+captions:
+  "1": "Summary of thermodynamic calculations"
+  "2": "Comparison of oxygen fugacities in the Solar System"
+  "3": "Proposed model for the evolution of Earth's progenitor embryos"
+  "ED1": "Plot of surface temperatures that allow for a gravitationally bound primary H2 atmosphere"
+  "ED2": "Summary of equilibrium calculations for Si in metal in embryos"
+  "ED3": "Pressure vs. radius for embryos"
+  "ED4": "Iron isotope ratios of bulk silicate for model embryos compared with chondrites"
+  "ED5": "Summary of D/H ratios for Solar System materials"
+expected_matches:
+  _page_0_Picture_7.jpeg: DROP
+  _page_1_Figure_0.jpeg: "1"     # PDF p2  — main Fig 1
+  _page_3_Figure_0.jpeg: "2"     # PDF p4  — main Fig 2
+  _page_4_Figure_1.jpeg: "3"     # PDF p5  — main Fig 3
+  _page_11_Figure_0.jpeg: "ED1"  # PDF p12 — Extended Data Fig 1
+  _page_12_Figure_1.jpeg: "ED2"  # PDF p13 — Extended Data Fig 2
+  _page_13_Figure_0.jpeg: "ED3"  # PDF p14 — Extended Data Fig 3
+  _page_14_Figure_1.jpeg: "ED4"  # PDF p15 — Extended Data Fig 4 (was DROPPED in baseline)
+  _page_15_Figure_0.jpeg: "ED5"  # PDF p16 — Extended Data Fig 5
+notes: |
+  Nature article — uses "Extended Data Fig. N" naming for the extended-data
+  figure set bundled in the PDF. Main paper has Figs 1-3; Extended Data
+  has ED1-5. Total 8 real figures + 1 banner image.
+
+  Per-strategy considerations:
+  - The captions extractor needs the FIG_CAPTION_RE_ED_* patterns to
+    pick up "Extended Data Fig. N | Title" forms. Without those, the
+    classifier sees an incomplete list and matches the wrong things.
+  - With ED captions extracted, the remaining failure mode is the
+    classifier picking Fig 3 for the page-2 image (which is actually
+    Fig 1) — page_1_Figure_0 and page_4_Figure_1 then both claim Fig 3.
+    dup-detect with reclassify-excluding should resolve.

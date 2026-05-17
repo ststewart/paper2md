@@ -1,0 +1,52 @@
+paper: root-supplemental.pdf
+out_dir: out/out_root_prompt
+total_pdf_pages: 8
+expected_tables:
+  I:
+    page: 2
+    caption_label: "TABLE I"
+    columns: ["", "QMC EA", "Expt EA", "QMC IP", "Expt IP"]
+    min_rows: 2
+  II:
+    page: 3
+    caption_label: "TABLE II"
+    columns: ["", "QMC", "Expt"]
+    min_rows: 3
+  III:
+    page: 4
+    caption_label: "TABLE III"
+    columns: ["Density (g/cc)", "T (K)", "P (GPa)", "State"]
+    min_rows: 10
+  IV:
+    page: 4
+    caption_label: "TABLE IV"
+    columns: ["Density (g/cc)", "T (K)", "P (GPa)", "State"]
+    min_rows: 5
+  V:
+    page: 5
+    caption_label: "TABLE V"
+    min_rows: 2
+  VI:
+    page: 7
+    caption_label: "TABLE VI"
+    min_rows: 10
+  VII:
+    page: 7
+    caption_label: "TABLE VII"
+    min_rows: 4
+  VIII:
+    page: 8
+    caption_label: "TABLE VIII"
+    min_rows: 2
+notes: |
+  Baseline (commit f4ee6b2) emits 7 sidecars but Table I (the first,
+  shortest table) is missing entirely -- marker rendered its 1-row
+  data as a paragraph "QMC EA Expt EA QMC IP Expt IP Mg unbound..."
+  rather than as markdown table syntax (Failure Mode A). With 8
+  expected tables, baseline detection rate is 7/8 = 87.5%.
+
+  The remaining 7 sidecars currently get re-numbered idx 1..7 in
+  paper2md's ordering, so idx 1 corresponds to source Table II,
+  idx 2 to Table III, etc. -- there is a 1-off shift between the
+  meta.json index and the source-table Roman numeral once Table I
+  gets re-emitted by the orphan-caption rescue.

@@ -1,0 +1,198 @@
+# Conda environment for paper2md on NVIDIA GPUs (DGX Spark / aarch64 + CUDA 13).
+#
+#   conda env create -f environment-gpu.yml
+#   conda activate paper2md
+#   pip install --no-deps marker-pdf==1.10.2 surya-ocr==0.17.1    # required post-step
+#   pip install "mineru[core]==3.1.7"                             # required post-step
+#
+# Refresh:
+#   conda env update -f environment-gpu.yml --prune
+#   pip install --no-deps marker-pdf==1.10.2 surya-ocr==0.17.1    # re-run after every prune
+#   pip install "mineru[core]==3.1.7"                             # re-run after every prune
+#
+# !!! PINNED VERSIONS — DO NOT BUMP CASUALLY !!!
+#
+#   marker-pdf 1.10.2 + surya-ocr 0.17.1 are pinned for body OCR
+#   reproducibility (matches environment-mac.yml).
+#
+#   mineru 3.1.7 is pinned because paper2md's hybrid splice and several
+#   layout-rescue hooks parse MinerU's middle.json schema. Schema drift
+#   between MinerU minor versions has historically broken caption
+#   detection, table HTML extraction, and figure-asset paths. Symptoms
+#   of mismatch: silently dropped figures/tables in output, splice
+#   counters going to zero corpus-wide, or noisy parsing errors.
+#
+#   If you must upgrade: run the "When MinerU version changes"
+#   checklist in docs/dev/HYBRID_IMPLEMENTATION.md, audit every fudge
+#   counter against a baseline corpus, and update the pin here AND in
+#   environment-mac.yml AND in docs/USAGE.md §2.
+#
+# MinerU (opendatalab) is the alternate body-extraction backend used by
+# src/wrap_mineru.py. Installed WITHOUT --no-deps so its many transitive
+# deps (paddleocr-equivalent, modelscope, mineru-vl-utils, gradio, etc.)
+# land in the env. pip's strict resolver will print warnings about new
+# pin mismatches with marker-pdf 1.10.2 + surya-ocr 0.17.1:
+#
+#   - mineru pulls Pillow 12.x   ; marker/surya want Pillow 10.x
+#   - mineru pulls anthropic 0.97 ; marker wants <0.47.0
+#   - mineru pulls openai 2.x    ; marker wants <2.0.0   (vllm also bumps)
+#   - mineru pulls regex 2026.x  ; marker wants <2025
+#   - mineru pulls pandas 2.3.x  ; (was pandas 3.0.2 from prior install)
+#
+# All five are declarative-only conflicts in paper2md's actual usage:
+# we don't call marker's anthropic/openai SDKs, surya's opencv calls
+# work across the 4.11→4.13 minor range, and Pillow 12's API is
+# backwards-compatible with the basic Image.open / Image.new / Image.
+# frombytes calls that paper2md and marker actually use. The full
+# 327-test paper2md suite passes with this combined env. If a Pillow
+# 12 specific bug ever fires, the targeted fix is `pip install --no-deps
+# pillow==10.4.0` to roll Pillow back without disturbing the rest.
+#
+# The `pip install --no-deps` step is unavoidable because vllm 0.19.1
+# disagrees with marker-pdf 1.10.2 and surya-ocr 0.17.1 on
+# transitive dep versions:
+#
+#   - vllm wants anthropic>=0.71.0 ; marker wants anthropic<0.47.0
+#   - vllm wants openai>=2.x         ; marker wants openai<2.0.0
+#   - vllm wants opencv-python-headless>=4.13.0 ; surya wants ==4.11.0.86
+#
+# pip's strict resolver (default since pip 20.3) refuses to install
+# both packages as top-level requests when their transitive deps are
+# in genuine conflict. paper2md never calls marker's anthropic/openai
+# paths (we have our own VLM hooks) and surya's opencv calls are stable
+# across the 4.11 -> 4.13 minor range, so all three constraint
+# mismatches are declarative-only -- harmless at runtime.
+#
+# The pip block below explicitly lists the marker + surya transitive
+# deps we DO need. After the env exists, the manual one-liner above
+# installs marker and surya themselves with their dep checks bypassed.
+#
+# vLLM serves a vision LLM at an OpenAI-compatible endpoint. Default model:
+# Qwen/Qwen3-VL-32B-Instruct (BF16). Launch with:
+#
+#   vllm serve Qwen/Qwen3-VL-32B-Instruct --port 8000 \
+#     --max-model-len 32768 --gpu-memory-utilization 0.80
+#
+# BF16 (~64 GB on disk, ~64 GB GPU memory) and not FP8 (~32 GB) because vLLM
+# 0.19.1's CUTLASS FP8 GEMM kernel crashes on the Spark's GB10 (sm_121,
+# Blackwell desktop) with "RuntimeError: Error Internal" during memory
+# profiling. BF16 uses standard PyTorch matmul which works on sm_121 via PTX.
+# Bump vllm and retry FP8 once Blackwell desktop sm_121 support lands upstream.
+#
+# Then run paper2md with --provider vllm. Set VLLM_BASE_URL to override the
+# endpoint (default http://localhost:8000/v1) and VLM_MODEL to override the
+# served model identifier.
+#
+# marker-pdf, surya-ocr, transformers, pymupdf, and pillow are pinned
+# to the SAME exact versions as environment-mac.yml. docling is no
+# longer pinned here -- install separately for --table-finder docling. This
+# is intentional: paper2md's output should match across the two
+# environments modulo the unavoidable per-machine differences (hostname,
+# backend, vlm_provider, vlm_model, torch CUDA suffix, openai/anthropic
+# SDK majors). Bumping these pins should always be done in BOTH env
+# files in the same commit; otherwise downstream consumers (the user's
+# corpus pipeline, validation tests) will see frontmatter drift.
+#
+# torch is the one ML package that necessarily differs: Spark uses the
+# +cu130 build (forced by pytorch.org's index URL); Mac uses the plain
+# PyPI build (CPU + MPS). Both pin to the SAME numeric version (2.10.0)
+# so the surya neural-net code paths are identical.
+
+name: paper2md
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pillow==10.4.0      # match environment-mac.yml
+  - pyyaml
+  - h5py>=3.9
+  - pip
+  - pip:
+      # pymupdf is in the pip section (not conda) because conda-forge tops
+      # out at 1.27.2.2 and we want 1.27.2.3 on both Mac and Spark for
+      # output-frontmatter parity. PyPI has the newer wheel for both
+      # linux-64 and macosx_arm64.
+      - pymupdf==1.27.2.3
+      # The torch/vllm trio is pinned exactly because pip's resolver picks the
+      # plain-PyPI CPU wheel of torch over the pytorch.org +cu130 wheel when
+      # the constraint is a plain >=. The +cu130 local-version suffix forces
+      # pip to use the CUDA wheel.
+      #
+      # vllm 0.19.1 hard-pins torch==2.10.0 / torchvision==0.25.0 / torchaudio
+      # ==2.10.0; the cu130 index has matching +cu130 builds for all three.
+      # If you bump vllm, re-check `pip download --no-deps vllm==X` for the
+      # torch trio version it wants and update accordingly.
+      - --extra-index-url https://download.pytorch.org/whl/cu130
+      - torch==2.10.0+cu130
+      - torchvision==0.25.0+cu130
+      - torchaudio==2.10.0+cu130
+      - vllm==0.19.1
+      # vllm 0.19.1's compiled extension links against libcudart.so.12, but our
+      # torch is cu130 (libcudart.so.13). The cu12 runtime libs install side-by-
+      # side under site-packages/nvidia/*/lib/ and vllm's loader finds them.
+      - nvidia-cuda-runtime-cu12
+      - nvidia-cublas-cu12
+      - nvidia-cudnn-cu12
+      - nvidia-cuda-nvrtc-cu12
+      - nvidia-nccl-cu12
+      - nvidia-cusparse-cu12
+      - nvidia-cusolver-cu12
+      - nvidia-curand-cu12
+      - nvidia-cufft-cu12
+      - nvidia-cuda-cupti-cu12
+      - nvidia-nvtx-cu12
+      - nvidia-nvjitlink-cu12
+      # marker-pdf AND surya-ocr are INSTALLED BY A MANUAL POST-STEP,
+      # see header. After the env build succeeds, run:
+      #
+      #   pip install --no-deps marker-pdf==1.10.2 surya-ocr==0.17.1
+      #
+      # The transitive deps below cover what marker and surya actually
+      # need at runtime; --no-deps prevents pip from re-evaluating
+      # their (vllm-conflicting) declarative pins.
+
+      # ML core. transformers pinned exactly to match environment-mac.yml.
+      # docling is now optional (--table-finder docling); install it
+      # separately if you need it under --layout-source=marker:
+      #     pip install docling==2.92.0
+      - transformers==4.57.6
+
+      # marker + surya transitive deps. Loose >= ranges so pip can
+      # pick something compatible with vllm's transitive pins; vllm
+      # itself supplies regex / tqdm / pydantic / einops at versions
+      # within both packages' ranges, so we don't repeat those.
+      - filetype>=1.2,<2
+      - ftfy>=6.1.1,<7
+      # marker imports `from google import genai` unconditionally at
+      # module load (marker/services/gemini.py is pulled in by
+      # marker/converters/pdf.py:51 even when paper2md never uses
+      # marker's Gemini VLM service). google-genai must be installed
+      # for the import to succeed.
+      - google-genai>=1.0,<2
+      - markdown2>=2.5.2,<3
+      - markdownify>=1.1,<2
+      - pdftext>=0.6.3,<0.7
+      - platformdirs>=4.3.6,<5
+      - pydantic-settings>=2.1.0,<3
+      - pypdfium2==4.30.0    # surya pins exact; safe vs vllm
+      - rapidfuzz>=3.8.1,<4
+      - scikit-learn>=1.6.1,<2
+
+      # openai/anthropic come from vllm's transitive deps (newer than
+      # marker prefers). paper2md uses the stable OpenAI() and
+      # anthropic.Anthropic() APIs so the SDK majors don't matter for
+      # our code paths. opencv-python-headless similarly comes from
+      # vllm at >=4.13; surya's stated 4.11.0.86 pin is bypassed by
+      # the --no-deps install.
+      - openai>=1.0
+      - anthropic>=0.30
+      - timm>=0.9
+      # Metadata / copyright front-end (Crossref, OpenAlex, Unpaywall, etc.)
+      - requests>=2.31
+      - python-dotenv>=1.0
+
+# Note on GB10 compute capability: torch 2.10.0+cu130 lists arches up to
+# sm_120 + compute_120 PTX. The Spark's GB10 is sm_121, so kernels JIT-compile
+# from PTX on first call (~200ms cold start, then cached). For peak Blackwell
+# performance, NVIDIA also publishes Spark-tuned wheels at https://pypi.nvidia.com/
+# but the cu130 build above is correct and runs the full pipeline.

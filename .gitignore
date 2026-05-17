@@ -1,0 +1,63 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+out/
+# per-run output directories anywhere under examples/ -- produced by
+# running the pipeline against the example PDFs for testing. Not
+# canonical samples; tracking them caused diff noise on every dev run.
+# `**/` catches nested cases like examples/enstatite/out_millot/.
+examples/**/out_*/
+*.h5
+*.hdf5
+
+.venv/
+venv/
+env/
+
+.env
+.env.local
+.env.*
+
+.DS_Store
+.idea/
+.vscode/
+
+# editor backup / swap files (vim, emacs, generic)
+*~
+*.swp
+*.swo
+.#*
+*.bak
+
+# tee'd run logs ("python ... 2>&1 | tee log.txt"). Matches at any
+# depth so log files inside examples/out_*/ subdirs are also ignored.
+log.txt
+
+# Top-level dev-run output directories. The examples/**/out_*/ pattern
+# above only catches outputs nested under examples/; corpus/dev runs
+# at repo root land outside that and need their own rule.
+out_*/
+
+# Local experimental conda envs that don't ship with the public release
+# (e.g., environment-mac-dev.yml is a TESTED-AND-DOES-NOT-WORK record
+# of an MPS attempt; useful locally, not for the repo).
+environment-*-dev.yml
+
+# Test-corpus PDFs and copyrighted excerpts. The PDFs anywhere under
+# examples/ are real journal articles -- copyrighted -- not
+# redistributable from this repo. examples/SOURCES.md lists each
+# filename with a DOI / URL so users can download their own copies.
+# Same for the wackerle-table2*.md files, which are verbatim
+# transcriptions of a copyrighted table.
+examples/**/*.pdf
+examples/**/wackerle-table2*.md
+
+# Local working corpora outside the public repo. paper2md/collections/
+# previously held the dev corpus; it has been moved to
+# ../archive/collections/ alongside the public-repo cleanup. This rule
+# stays in case a developer recreates the directory for ad-hoc runs.
+collections/

@@ -1,0 +1,43 @@
+paper: millot_si.pdf
+out_dir: out/out_millot_prompt
+total_pdf_pages: 12
+expected_tables:
+  S1:
+    page: 5
+    caption_label: "Supplementary Table S1"
+    columns: ["Shot ID", "ρ0", "US,Q", "US,Bm", "up", "ρ", "P"]
+    min_rows: 3
+  S2:
+    page: 5
+    caption_label: "Supplementary Table S2"
+    columns: ["SiO2", "TiO2", "Al2O3", "Cr2O3", "FeO", "MnO", "MgO", "CaO", "NiO", "Total"]
+    min_rows: 1
+  S3:
+    page: 7
+    caption_label: "Supplementary Table S3"
+    min_rows: 8
+  S4:
+    page: 8
+    caption_label: "Supplementary Table S4"
+    min_rows: 8
+  S5:
+    page: 9
+    caption_label: "Supplementary Table S5"
+    columns: ["ρ", "T", "P", "PErr", "E", "EErr", "phase"]
+    min_rows: 25
+  S6:
+    page: 10
+    caption_label: "Supplementary Table S6"
+    columns: ["ρ", "T", "P", "PErr", "E", "EErr", "phase"]
+    min_rows: 30
+notes: |
+  Baseline (commit f4ee6b2 / before table-rescue work) emits 4 valid
+  sidecars (S2-S5). S1 fails because bbox+caption-bypass both miss
+  (Failure Mode C); S6 fails because marker emits a malformed table
+  with 32/45 blank rows (Failure Mode B).
+
+  S5 and S6 are both DFT-MD EOS tables with similar column headers
+  on adjacent pages -- when a VLM is shown page 9 alone and asked
+  for "Table S6", it tends to extract S5 by mistake. The rescue
+  prompt MUST name the caption verbatim and explicitly say "ignore
+  any other table that may be visible on this page".

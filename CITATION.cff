@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: If you use paper2md, please cite as below.
+title: paper2md
+authors:
+  - family-names: Stewart
+    given-names: Sarah T.
+    affiliation: Arizona State University
+  - name: Claude (Anthropic, Opus 4.7)
+type: software
+license: MIT
+repository-code: https://github.com/ststewart/paper2md
+version: 0.4.0
+date-released: 2026-05-16

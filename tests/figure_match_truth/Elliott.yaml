@@ -1,0 +1,9 @@
+paper: Elliott.pdf
+out_dir: examples/out_elliott
+total_pdf_pages: 2
+captions: {}  # TODO: list captions from Elliott.pdf (only 1 figure expected)
+expected_matches:
+  _page_1_Figure_1.jpeg: "1"  # baseline already correct; sanity check that no solution regresses this
+notes: |
+  Easy-case sanity check: 1 image, 1 figure expected, baseline already correct.
+  Any solution that breaks this is unacceptable.

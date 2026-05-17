@@ -1,0 +1,10 @@
+paper: aastex-template.pdf
+out_dir: examples/out_aastex
+total_pdf_pages: 8
+captions: {}  # TODO: list captions from aastex-template.pdf
+expected_matches:
+  _page_1_Figure_2.jpeg: TODO  # current: not matched (no fig_id assigned)
+notes: |
+  Easy-case sanity: synthetic AAS template paper. The current run shows 1 image with no
+  matched_figure (template may have no figure caption that the regex picks up). User
+  inspection needed to confirm whether a fig_id is expected at all (could be DROP).
