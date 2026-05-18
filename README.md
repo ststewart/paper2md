@@ -1,5 +1,7 @@
 # paper2md
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20263035.svg)](https://doi.org/10.5281/zenodo.20263035) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 PDF to Markdown converter with separate extraction of figures and tables. Tuned for scientific journal articles. Designed for fully offline extraction; runs on Apple Silicon (LM Studio + MLX) or NVIDIA (vLLM + Qwen3-VL-32B-Instruct).
 
 This is not a fast converter. This workflow is designed for high accuracy, reproducibility, traceability, privacy, copyright compliance, and standardization of output formats.
@@ -102,3 +104,8 @@ End-to-end smoke runs use the PDFs under `examples/`, e.g. `python src/paper2md.
 ---
 
 paper2md v0.4.0 (May 2026). Developed by Sarah T. Stewart with Claude Code (Anthropic, Opus 4.7). MIT License — see [`LICENSE`](LICENSE).
+
+**Cite this software:**
+Stewart, S. T., & Claude (Anthropic, Opus 4.7). (2026). *paper2md (v0.4.0)* [Software]. Zenodo. https://doi.org/10.5281/zenodo.20263036
+
+The concept DOI [`10.5281/zenodo.20263035`](https://doi.org/10.5281/zenodo.20263035) always resolves to the latest release; use the version-specific DOI above when citing for reproducibility.

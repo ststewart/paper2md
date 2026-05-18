@@ -157,7 +157,7 @@ __authors__ = "Sarah T. Stewart; Claude (Anthropic, Opus 4.7)"
 # "10.5281/zenodo.RESERVED" means the citation has not yet been wired
 # to a Zenodo deposit; the runtime banner falls back to a no-DOI
 # citation when it sees the placeholder.
-__doi__ = "10.5281/zenodo.20262917"
+__doi__ = "10.5281/zenodo.20263036"
 __citation__ = (
     "Stewart, S. T., & Claude (Anthropic, Opus 4.7). (2026). "
     "paper2md (v{version}) [Software]. {license} License."

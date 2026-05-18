@@ -10,4 +10,9 @@ type: software
 license: MIT
 repository-code: https://github.com/ststewart/paper2md
 version: 0.4.0
-date-released: 2026-05-16
+date-released: 2026-05-17
+doi: 10.5281/zenodo.20263036
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20263035
+    description: Concept DOI (all versions of paper2md; resolves to latest release)

@@ -86,11 +86,12 @@ release; nothing else changes.
 
 ## 2. Per-release workflow (this is what you'll do every time)
 
-The shape of a release is: **dev commits → transfer dir → GitHub push
-→ Zenodo DOI → DOI paste → amend + tag → tag push → GitHub release →
-verify.**
+The shape of a release is: **dev commits → transfer dir (tagged with
+DOI placeholder) → push main + tag → GitHub release → Zenodo mints
+DOI → patch dev follow-up.**
 
-Plan an hour for §2.5–2.9 (Zenodo + DOI plumbing); the rest is fast.
+Plan ~30 min total. The Zenodo handshake (§2.6 → DOI appears) takes
+a couple of minutes; everything else is fast.
 
 ### 2.1 🤖 CLAUDE — Bump the version + tests in the DEV repo
 
@@ -99,7 +100,9 @@ In `/home/sts/datasets/pdf2md/claude/paper2md/`, edit:
 - `src/paper2md.py`: `__version__ = "0.X.Y"` (also the line in the
   module docstring header)
 - `src/paper2md.py`: `__doi__ = "10.5281/zenodo.RESERVED"`
-  (placeholder until §2.5)
+  (placeholder; patched after Zenodo mints in §2.7. Carrying the
+  previous version's DOI here briefly would be wrong — it'd be
+  archived alongside the new version.)
 - `pyproject.toml`: `version = "0.X.Y"`
 - `CITATION.cff`: `version: 0.X.Y` + `date-released: <today>`
 - `README.md`: footer "paper2md v0.X.Y (Month YYYY)"
@@ -134,7 +137,7 @@ logical change (new feature, bug fix, doc edit), with the version
 bump as its own final commit `Bump to v0.X.Y`. Don't accumulate
 multi-task diffs into one mega-commit.
 
-No tag yet. We tag in §2.6 inside the TRANSFER dir, not the dev
+No tag yet. We tag in §2.4 inside the TRANSFER dir, not the dev
 repo. (The dev repo carries the development history; the transfer
 repo carries the public-facing v0.X.Y root commit.)
 
@@ -165,88 +168,50 @@ cd paper2md_transfer_v0XY
 python -m pytest tests/ -q     # same count as dev repo
 ```
 
-Initialize fresh git history (single root commit):
+Initialize fresh git history (single root commit) and tag:
 
 ```bash
-git init
+git init -b main
+git config user.name "Sarah T. Stewart"
+git config user.email "sstewa56@asu.edu"
 git add -A
 git commit -m "paper2md v0.X.Y — initial public release"
-# (For releases after the first: keep the v0.X.0 root style but you
-# can mention what's new in the commit body.)
-```
-
-### 2.5 🧑 SARAH — Reserve a Zenodo DOI
-
-This is the load-bearing step. Reserve the DOI Zenodo would mint for
-the next release, paste it into the source, THEN tag — so the tag,
-the published release, and the DOI all match.
-
-1. Go to [Zenodo](https://zenodo.org/) and sign in with the same
-   GitHub account you used in §1.4.
-2. Click **+ Upload** in the top-right (or **New upload**).
-3. Choose the **Software** resource type.
-4. Click **Reserve DOI**. Zenodo shows a DOI like
-   `10.5281/zenodo.12345678` and assigns it to this draft.
-5. Copy the bare identifier — `10.5281/zenodo.12345678`, no
-   protocol prefix, no trailing slash. **Don't publish the draft
-   yet.** Just leave the form open in a tab; the GitHub integration
-   takes over in §2.8.
-
-**Why we abandon the manual draft**: the GitHub integration creates
-its own deposit when it sees a new release, and it'll claim the
-reserved DOI as long as the DOI embedded in the release matches one
-Zenodo has already reserved for your account. If you publish the
-manual draft, you'll end up with two deposits. (See §4 if this
-happens.)
-
-Hand the DOI back to Claude.
-
-### 2.6 🤖 CLAUDE — Paste DOI into source, amend transfer commit, tag
-
-In the **transfer directory**:
-
-```bash
-cd paper2md_transfer_v0XY
-# Edit src/paper2md.py: __doi__ = "10.5281/zenodo.12345678"
-git add src/paper2md.py
-git commit --amend --no-edit
 git tag -a v0.X.Y -m "paper2md v0.X.Y"
+git remote add origin git@github.com:ststewart/paper2md.git
 ```
 
-Also apply the same DOI paste to the **dev repo's**
-`src/paper2md.py:__doi__` and commit as `Wire v0.X.Y Zenodo DOI` —
-keeps the dev tree's banner in sync with what the public archive shows.
+> **Note**: `__doi__` stays at the `"10.5281/zenodo.RESERVED"`
+> placeholder for now. Zenodo assigns the actual DOI when the
+> GitHub release is published in §2.6, and we patch the dev tree
+> in §2.7. The transfer commit's `__doi__` will remain RESERVED
+> in the archived tarball — this is a documented cosmetic scar
+> (see §2.7 note).
 
-Smoke check:
-
-```bash
-python src/paper2md.py --help | head -3
-```
-
-The third line should now read:
-
-```
-Cite: Stewart, S. T., & Claude (Anthropic, Opus 4.7). (2026). paper2md (v0.X.Y) [Software]. MIT License. https://doi.org/10.5281/zenodo.12345678
-```
-
-Frontmatter / `.meta.json` outputs from this version onwards will
-also carry `paper2md_doi: "10.5281/zenodo.12345678"`.
-
-### 2.7 🧑 SARAH — Push main and the tag
+### 2.5 🧑 SARAH — Push main and the tag
 
 In the **transfer directory**:
 
 ```bash
 cd paper2md_transfer_v0XY
-git push --force origin main    # force needed: amended in §2.6
-git push origin v0.X.Y          # tag pushes are independent
+git push -u origin main          # first release: use -u to set upstream
+git push origin v0.X.Y           # tag push is independent
 ```
 
-Force-push to a single-commit branch that only you control is safe.
-(If this is the FIRST release per §1.3, replace `--force` with
-`-u origin main`.)
+For releases AFTER the first, use `git push --force origin main` only
+if the root commit was amended for some other reason (rare).
 
-### 2.8 🧑 SARAH — Create the GitHub release
+> **Why the DOI is NOT pre-reserved.** Earlier versions of these
+> instructions had a "reserve DOI before tagging" step (Zenodo
+> Upload → Reserve DOI → paste into `__doi__` → tag). **That flow
+> does not work with the current Zenodo InvenioRDM integration**:
+> the GitHub-Zenodo webhook creates a fresh deposit with a fresh
+> DOI on every release, ignoring previously-reserved drafts. The
+> reserved draft just sits unpublished on your dashboard, and
+> `__doi__` ends up pointing at a DOI that never resolves to
+> anything. We tag with `__doi__ = "RESERVED"` placeholder and
+> patch in a dev follow-up after Zenodo assigns the real DOI.
+
+### 2.6 🧑 SARAH — Create the GitHub release (Zenodo assigns DOI here)
 
 The Zenodo integration only archives **GitHub releases**, not raw
 tags. Go to:
@@ -262,14 +227,52 @@ https://github.com/<your-username>/paper2md/releases/new
 - Click **Publish release**.
 
 Within a minute or two, Zenodo's webhook fires. Refresh
-[Zenodo](https://zenodo.org/) and you should see the new deposit
-appear with the DOI you reserved in §2.5.
+[Zenodo](https://zenodo.org/) and a new deposit appears with a
+freshly-minted DOI of the form `10.5281/zenodo.NNNNNNNN`. Copy
+that bare identifier and hand it to Claude for §2.7.
 
-### 2.9 🧑 SARAH — Verify the DOI resolves
+### 2.7 🤖 CLAUDE — Wire the assigned DOI into dev source
 
-Open `https://doi.org/10.5281/zenodo.12345678` in a browser. It
-should redirect to your Zenodo deposit page, which lists the release
-archive and metadata from `CITATION.cff`.
+In the **dev repo only** (NOT the transfer dir — the transfer's
+v0.X.Y root commit is already on Zenodo and immutable):
+
+```bash
+cd /home/sts/datasets/pdf2md/claude/paper2md
+# Edit src/paper2md.py: __doi__ = "10.5281/zenodo.NNNNNNNN"
+# Edit CITATION.cff: add `doi: 10.5281/zenodo.NNNNNNNN`
+git add src/paper2md.py CITATION.cff
+git commit -m "Wire v0.X.Y Zenodo DOI"
+```
+
+Smoke check:
+
+```bash
+python src/paper2md.py --help | head -3
+```
+
+The third line should now read:
+
+```
+Cite: Stewart, S. T., & Claude (Anthropic, Opus 4.7). (2026). paper2md (v0.X.Y) [Software]. MIT License. https://doi.org/10.5281/zenodo.NNNNNNNN
+```
+
+Frontmatter / `.meta.json` outputs from this version onwards will
+also carry `paper2md_doi: "10.5281/zenodo.NNNNNNNN"`.
+
+> **Known cosmetic scar**: the v0.X.Y tarball archived on Zenodo
+> still has `__doi__ = "10.5281/zenodo.RESERVED"` inside the
+> source — because the DOI didn't exist when we tagged. Anyone
+> who downloads that tarball and runs `--help` sees the no-DOI
+> citation banner. The Zenodo deposit page itself shows the
+> correct DOI and the `CITATION.cff` on GitHub's main branch is
+> correct. Acceptable tradeoff; the alternative is a v0.X.Y+1
+> point release just to bake the DOI in.
+
+### 2.8 🧑 SARAH — Verify the DOI resolves
+
+Open `https://doi.org/10.5281/zenodo.NNNNNNNN` in a browser. It
+should redirect to your Zenodo deposit page, which lists the
+release archive and metadata from `CITATION.cff`.
 
 If the DOI 404s, the GitHub-Zenodo handshake didn't complete — see
 §4.
@@ -291,13 +294,14 @@ If the DOI 404s, the GitHub-Zenodo handshake didn't complete — see
 ## 4. Troubleshooting
 
 **Zenodo deposit appears but with a different DOI than the one you
-reserved.** The reserved DOI was probably consumed by an unrelated
-deposit between when you reserved it and when the GitHub release
-fired. Edit the deposit on Zenodo to discard it (you can within the
-first 24 h), reserve a new DOI on Zenodo, hand it to Claude to paste
-into `__doi__`, amend + force-push the tag, recreate the GitHub
-release. Force-push of a tag is fine here because v0.X.Y was never
-visible to anyone outside your account.
+reserved.** This is the **expected** behavior of the current Zenodo
+InvenioRDM integration — DOI reservations are NOT claimed by the
+GitHub webhook. Don't try to reserve in advance. Use the §2.5-2.8
+flow (tag + release first, patch `__doi__` in a follow-up dev commit
+after Zenodo assigns the real DOI). If you have an old unpublished
+draft sitting on your Zenodo dashboard from a reservation attempt,
+delete it (top of the draft page → Delete / Discard; unpublished
+drafts are self-deletable).
 
 **GitHub release published but Zenodo never picked it up.** Check
 that the GitHub-Zenodo integration is still ON for this repo at
@@ -307,11 +311,12 @@ skip the release. After re-enabling, re-trigger by clicking
 "Re-run integration" or by deleting and recreating the GitHub
 release.
 
-**Two Zenodo deposits with the same release.** You probably
-published the manual draft from §2.5 instead of letting the GitHub
-integration claim it. The first deposit can be deleted by you
-within 24 h via Zenodo's UI; after that, it requires emailing
-Zenodo support.
+**Two Zenodo deposits with the same release.** Likely cause: you
+hit "Publish" on a manually-created Zenodo draft AND the GitHub
+integration also published. The manual deposit can be deleted by
+you within 24 h via Zenodo's UI if unpublished; once published,
+contact Zenodo support. The integration-created one is the canonical
+archive — keep that, delete the other.
 
 **Runtime banner still says no-DOI after pasting `__doi__`.** The
 fallback condition checks `__doi__.endswith("RESERVED")` — make
@@ -327,44 +332,55 @@ source module). Re-run §2.4 copy step; or run
 
 ## 5. Concept DOI vs version DOI
 
-Zenodo mints two DOIs once your project has at least one published
-release:
+Zenodo mints two DOIs for every project at first release:
 
-- **Concept DOI** (e.g. `10.5281/zenodo.99999998`): always points at
-  "all versions of paper2md". Doesn't change across releases.
-  Useful as a permanent reference when you don't care which
-  version was used.
-- **Version DOI** (e.g. `10.5281/zenodo.99999999`): points at one
-  specific release. Reserved + embedded in `__doi__` per release.
+- **Concept DOI** (paper2md: `10.5281/zenodo.20263035`): always
+  points at "all versions of paper2md". Doesn't change across
+  releases. Always resolves to the latest. Found on any deposit's
+  "Versions" panel ("Cite all versions? ... use the DOI ...").
+- **Version DOI** (paper2md v0.4.0: `10.5281/zenodo.20263036`):
+  points at one specific release archive. New value every release.
 
-paper2md's `__doi__` constant carries the **version DOI** because
-that's what reproducibility requires — a consumer of the output
-markdown six months from now needs to know which exact release
-produced it. The concept DOI lives in `CITATION.cff` (if you set
-that up) and on the Zenodo page itself.
+paper2md's wiring:
+
+- **`src/paper2md.py:__doi__`** = version DOI. Reproducibility
+  requires it — a consumer of the output markdown six months from
+  now needs to know which exact release produced it. Re-wired in
+  §2.7 of this doc after each release.
+- **`CITATION.cff`** carries both: `doi:` field = version DOI,
+  `identifiers:` block = concept DOI tagged "description: Concept
+  DOI (all versions...)". Reference managers and citation tools
+  pick the right one for context.
+- **`README.md` badge** uses the concept DOI so the badge stays
+  green and points at the latest release regardless of which
+  version of the README a reader has.
 
 When citing paper2md in a paper, use the version DOI. When linking
-from your CV or another project's README, the concept DOI is fine.
+from your CV, another project's README, or any general "see
+paper2md" reference, the concept DOI is the right choice.
+
+The concept DOI is set once at v0.X.0 and never changes — no
+per-release maintenance for it.
 
 ---
 
 ## 6. Sequencing summary
 
 ```
-§2.1  🤖 CLAUDE  bump __version__, __doi__="RESERVED", doc version stamps in DEV repo
+§2.1  🤖 CLAUDE  bump __version__, leave __doi__="RESERVED" placeholder, doc version stamps in DEV repo
 §2.2  🤖 CLAUDE  pytest -q + --help smoke
 §2.3  🤖 CLAUDE  git commit (split: feature-per-commit + final "Bump to v0.X.Y")
-§2.4  🤖 CLAUDE  build paper2md_transfer_v0XY/; verify tests; git init + single root commit
-§2.5  🧑 SARAH   Zenodo → New upload → Software → Reserve DOI → copy → hand to Claude
-§2.6  🤖 CLAUDE  paste DOI into transfer/src/paper2md.py, amend, tag v0.X.Y
-                 also paste into dev/src/paper2md.py, commit "Wire v0.X.Y Zenodo DOI"
-§2.7  🧑 SARAH   cd transfer; git push --force origin main; git push origin v0.X.Y
-§2.8  🧑 SARAH   GitHub → Releases → new release from v0.X.Y tag → Publish
-§2.9  🧑 SARAH   open https://doi.org/<your-DOI> → verify Zenodo archived
+§2.4  🤖 CLAUDE  build paper2md_transfer_v0XY/; verify tests; git init + single root commit + tag v0.X.Y
+§2.5  🧑 SARAH   cd transfer; git push -u origin main; git push origin v0.X.Y
+§2.6  🧑 SARAH   GitHub → Releases → new release from v0.X.Y tag → Publish
+                 → Zenodo assigns DOI within ~2 min → copy from deposit page → hand to Claude
+§2.7  🤖 CLAUDE  paste DOI into dev/src/paper2md.py + dev/CITATION.cff; commit "Wire v0.X.Y Zenodo DOI"
+                 (transfer dir is NOT updated -- its tarball is already on Zenodo and immutable)
+§2.8  🧑 SARAH   open https://doi.org/<your-DOI> → verify Zenodo archived
 ```
 
-If you can't follow §2.5 first (e.g. Zenodo is down), the fallback is
-to publish without the DOI, then commit a follow-up that populates
-`__doi__` once Zenodo's webhook fires. Single-commit sequencing is
-the goal but not load-bearing — paper2md runs fine with the
-placeholder.
+The DOI flow is fundamentally asymmetric: Zenodo only mints the
+DOI when the release is published, so the tagged source can't
+contain its own DOI. We accept the cosmetic scar (archived
+tarball's `__doi__` says RESERVED) in exchange for not needing a
+v0.X.Y+1 point release to bake the DOI in.
